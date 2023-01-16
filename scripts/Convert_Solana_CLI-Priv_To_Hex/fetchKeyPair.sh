@@ -1,0 +1,1 @@
+solana config get | grep "Keypair Path:"
