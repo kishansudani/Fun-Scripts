@@ -1,0 +1,7 @@
+pytest-shutil
+pycrypto
+pypiwin32
+pysqlite3
+pybase64
+jsonlib
+os-sys
