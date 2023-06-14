@@ -1,4 +1,5 @@
-pragma solidity ^0.4.16;
+// SPDX-License-Identifier: MIT 
+pragma solidity 0.8.19;
 
 contract DateTime {
     /*
@@ -83,7 +84,7 @@ contract DateTime {
     function parseTimestamp(uint256 timestamp)
         internal
         pure
-        returns (_DateTime dt)
+        returns (_DateTime memory dt)
     {
         uint256 secondsAccountedFor = 0;
         uint256 buf;
