@@ -67,6 +67,8 @@ contract IFO is ReentrancyGuard {
         _;
     }
 
+    // ########################## Admin only ######################################
+
     function setOfferingAmount(uint256 _offerAmount) public onlyAdmin {
         require(block.number < startBlock, "You can not change the offering amount after it start");
         offeringAmount = _offerAmount;
@@ -77,22 +79,41 @@ contract IFO is ReentrancyGuard {
         raisingAmount = _raisingAmount;
     }
 
-    function deposit(uint256 _amount) public {
+    function finalWithdraw(
+        uint256 _lpAmount,
+        uint256 _offerAmount
+    ) public onlyAdmin {
+        require(
+            _lpAmount < depositeToken.balanceOf(address(this)),
+            "not enough token 0"
+        );
+        require(
+            _offerAmount < offeringToken.balanceOf(address(this)),
+            "not enough token 1"
+        );
+        depositeToken.safeTransfer(address(msg.sender), _lpAmount);
+        offeringToken.safeTransfer(address(msg.sender), _offerAmount);
+    }
+
+    // ########################## external ######################################
+
+    function deposit(uint256 _amount) external nonReentrant {
         require(
             block.number > startBlock && block.number < endBlock,
             "It's not started"
         );
         require(_amount > 0, "amount must be > 0");
         depositeToken.safeTransferFrom(address(msg.sender), address(this), _amount);
-        if (userInfo[msg.sender].amount == 0) {
+        uint256 userDepositedAmount = userInfo[msg.sender].amount;
+        if (userDepositedAmount == 0) {
             addressList.push(address(msg.sender));
         }
-        userInfo[msg.sender].amount = userInfo[msg.sender].amount + _amount;
+        userInfo[msg.sender].amount = userDepositedAmount + _amount;
         totalAmount = totalAmount + _amount;
         emit Deposit(msg.sender, _amount);
     }
 
-    function harvest() public nonReentrant {
+    function harvest() external nonReentrant {
         require(block.number > endBlock, "You can harvest after staking period close");
         require(userInfo[msg.sender].amount > 0, "You did not deposited any amount to this staking");
         require(!userInfo[msg.sender].claimed, "You do not have any reward to harvest");
@@ -105,6 +126,8 @@ contract IFO is ReentrancyGuard {
         userInfo[msg.sender].claimed = true;
         emit Harvest(msg.sender, offeringTokenAmount, refundingTokenAmount);
     }
+
+    // ########################## View ######################################
 
     function hasHarvest(address _user) external view returns (bool) {
         return userInfo[_user].claimed;
@@ -140,19 +163,5 @@ contract IFO is ReentrancyGuard {
         return addressList.length;
     }
 
-    function finalWithdraw(
-        uint256 _lpAmount,
-        uint256 _offerAmount
-    ) public onlyAdmin {
-        require(
-            _lpAmount < depositeToken.balanceOf(address(this)),
-            "not enough token 0"
-        );
-        require(
-            _offerAmount < offeringToken.balanceOf(address(this)),
-            "not enough token 1"
-        );
-        depositeToken.safeTransfer(address(msg.sender), _lpAmount);
-        offeringToken.safeTransfer(address(msg.sender), _offerAmount);
-    }
+    
 }
